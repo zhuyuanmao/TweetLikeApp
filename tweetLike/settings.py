@@ -37,6 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'rest_framework',
+    'tweetLike.apps.authentication',
     
 ]
 
@@ -119,3 +122,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+
+"""
+Tell Django about the custom 'User' model we created.
+The string 'authentication.Author' tells Django we are referring the 'Author' model in 
+the 'authentication' modules. This module is registered above in a setting
+called 'INSTALLED_APPs'.
+"""
+
+AUTH_USER_MODEL = 'authentication.Author'
+
