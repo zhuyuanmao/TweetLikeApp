@@ -90,7 +90,10 @@ class AuthorSerializer(serializers.ModelSerializer):
     # We could change them, but that would create extra work while introducing 
     # no benefits.
 
-    password = serializers.CharField(max_length=128,min_length=8,write_only = True)
+    password = serializers.CharField(max_length=128,
+                                     min_length=8,
+                                     write_only = True
+                                    )
 
     class Meta:
         model = Author
@@ -115,7 +118,6 @@ class AuthorSerializer(serializers.ModelSerializer):
             setattr(instance,key,value)
 
         if password is not None:
-            
             instance.set_password(password)
         #Finally, after everthing has been updated, we must explicitly save the model.
         #In this case, '.set_password()' does not save the model.

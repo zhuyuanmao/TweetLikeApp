@@ -1,6 +1,13 @@
 from django.test import TestCase
 from tweetLike.apps.authentication.models import Author
-from rest_framework.test import APIRequestFactory,APIClient,APITestCase,URLPatternsTestCase
+from .views import RetrieveUpdateAPIView
+from rest_framework.test import (
+    APIRequestFactory,APIClient,
+    APITestCase,
+    force_authenticate
+    )
+from django.contrib.auth import get_user_model
+
 
 """
 Model Tests
@@ -31,6 +38,11 @@ class AuthenticationAPITest(APITestCase):
         """
         response = self.client.post('/users/',self.login_data,format='json')
         self.assertEqual(response.status_code,201)
+
+        self.assertEqual(Author.objects.count(),1)
+        self.assertEqual(Author.objects.get().username,'yuanmao')
+        self.assertEqual(Author.objects.get().email,'yuanmao@user.com')
+
     def test_author_registration_repeated_account_info(self):
         """
         Registrates user info twice.
@@ -71,5 +83,65 @@ class AuthenticationAPITest(APITestCase):
         }
         response = self.client.post('/users/login/',mask_data,format='json')
         self.assertEqual(response.status_code,400)
+
+
+class UserRetrieveUpdateAPITest(APITestCase):
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(email='john@test.com',username='john',password='secret')
+        self.client = APIClient()
+        
+    def test_get_author_info_successful(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get('/user/')
+        self.assertEqual(response.status_code,200)
+
+    def test_get_user_unauthenticated(self):
+        response = self.client.get('/user/')
+        self.assertEqual(response.status_code,403)
+
+    def test_post_me_not_allowed(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post('/user/',{})
+        self.assertEqual(response.status_code,405)
+
+    def test_update_user_info_successful(self):
+        self.client.force_authenticate(user=self.user)
+        payload =  {
+            "user": 
+                {'username':'johndoe',
+                'email':'johndoe@user.com',
+                'password':'newpassword'
+            }
+        }
+        #Update all info    
+        response = self.client.put('/user/',data=payload,format='json')
+        self.user.refresh_from_db()
+
+        self.assertEqual(response.status_code,200)
+        self.assertTrue(self.user.check_password(payload['user'].get('password')))
+        self.assertEqual(self.user.username,payload['user'].get('username'))
+        self.assertEqual(self.user.email,payload['user'].get('email'))
+
+    def test_update_user_info_partially(self):
+        self.client.force_authenticate(user=self.user)
+        payload =  {
+            "user": 
+                {'username':'new_username',
+            }
+        }
+        response = self.client.put('/user/',data=payload,format='json')
+        self.user.refresh_from_db()
+        
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(self.user.username,payload['user'].get('username'))
+
+
+     
+
+
+    
+
+  
 
 

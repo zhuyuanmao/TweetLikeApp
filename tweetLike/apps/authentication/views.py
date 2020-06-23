@@ -13,8 +13,8 @@ class RegistrationAPIView(APIView):
     Allow any user (authenticated or not) to hit this endpoint.
     """
 
-    permission_classes = (AllowAny,)
-    renderer_classes = (UserJSONRenderer,)
+    permission_classes = [AllowAny,]
+    renderer_classes = [UserJSONRenderer,]
     serializer_class = RegistrationSerializer
 
     def post(self, request):
@@ -33,8 +33,8 @@ class LoginAPIView(APIView):
     But authenticated user will recieve a 200 status code.
     """
 
-    permisson_classes = (AllowAny,)
-    renderer_classess = (UserJSONRenderer,)
+    permisson_classes = [AllowAny,]
+    renderer_classess = [UserJSONRenderer,]
     serializer_class = LoginSerializer
 
     def post(self,request):
@@ -51,20 +51,26 @@ class LoginAPIView(APIView):
         return Response(serializer.data,status=status.HTTP_200_OK)
 
 class UserRetrieveUpdateAPIView(RetrieveUpdateAPIView):
-    permisson_classes = (IsAuthenticated,)
+    
+    permission_classes = [IsAuthenticated,]
     renderer_classess = (UserJSONRenderer,)
     serializer_class = AuthorSerializer
 
-    
-    def get(self,request,*args,**kwargs):
+    def retrieve(self,request,*args,**kwargs):
+        # There is nothing to validate or save here, Instead, we just want the 
+        # serializer to handle turning our 'User' object into something that
+        # can be JSONified and sent to the client.
         serializer = self.serializer_class(request.user)
-        
+
         return Response(serializer.data,status=status.HTTP_200_OK)
 
-    def put(self,request,*args,**kwargs):
-        serializer_data = request.data.get('user',{})
+    def update(self, request, *args, **kwargs):
 
-        serializer = self.serializer_class(request.user,data=serializer_data,partial = True)
+        serializer_data = request.data.get('user',{})
+        #Here is that serialize, validate,save pattern.
+        serializer = self.serializer_class(
+            request.user,data=serializer_data,partial = True
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
