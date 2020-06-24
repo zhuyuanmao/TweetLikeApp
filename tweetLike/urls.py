@@ -18,11 +18,17 @@ from django.urls import path
 from tweetLike.apps.authentication.views import (
     UserRetrieveUpdateAPIView,RegistrationAPIView,LoginAPIView
 )
+from tweetLike.apps.profiles.views import(
+    ProfileRetrieveAPIView
+)
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('user/',UserRetrieveUpdateAPIView.as_view()),
     path('users/',RegistrationAPIView.as_view()),
     path('users/login/',LoginAPIView.as_view()),
+
+    path('profiles/<str:username>/',ProfileRetrieveAPIView.as_view()),
     
 ]
