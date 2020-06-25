@@ -2,6 +2,8 @@ from django.contrib.auth import authenticate
 from rest_framework import serializers
 from .models import Author
 
+from tweetLike.apps.profiles.serializers import ProfileSerializer
+
 class RegistrationSerializer(serializers.ModelSerializer):
     """
     Serializers registration requets and creates a new user
@@ -90,14 +92,35 @@ class AuthorSerializer(serializers.ModelSerializer):
     # We could change them, but that would create extra work while introducing 
     # no benefits.
 
-    password = serializers.CharField(max_length=128,
-                                     min_length=8,
-                                     write_only = True
-                                    )
+    password = serializers.CharField(
+        max_length=128,
+        min_length=8,
+        write_only = True
+    )
+
+    # Adding for Profiles modules
+    ###########################################################################
+    # When a field should be handled as a serializer, we must explicitly say so.
+    # Moreover, "AuthorSerilaizer" should never expose profile information,
+    # So we set 'write_only=True'
+    profile = ProfileSerializer(write_only=True)
+    # We want to get the 'bio','image','firstName','lastName' and 'github' 
+    # fields from the related Profile model.
+    bio = serializers.CharField(source='profile.bio',read_only=True)
+    image = serializers.CharField(source='profile.image',read_only=True)
+
+    firstName = serializers.CharField(source='profile.firstName',read_only=True)
+    lastName = serializers.CharField(source='profile.lastName',read_only=True)
+    github = serializers.CharField(source='profile.github',read_only=True)
+
+    ###########################################################################
+    
 
     class Meta:
         model = Author
-        fields = ('email','username','password','token',)
+        fields = (
+            'email','username','password','token','profile','bio','image','firstName','lastName','github'
+        )
         # The 'read_only_fields' option is an alternative for explicity specifying the field
         # with 'read_only= True' like we did for password.
         read_only_fields = ('token',)
@@ -112,6 +135,11 @@ class AuthorSerializer(serializers.ModelSerializer):
         # which is important for security.
         # What that means here is that we need to remove the password filed from the 
         # 'validate_data' dictionary before iterating over it.
+
+        # Like passwords, we have to handle profiles separately. To do that, 
+        # We remove the profile data from the 'validated_data' dictionary.
+        profile_data = validated_data.pop('profile',{})
+
         for (key,value) in validated_data.items():
             # For the keys remaining in 'validated_data', we will set them on 
             # the current 'User' instance at a time.
@@ -119,9 +147,18 @@ class AuthorSerializer(serializers.ModelSerializer):
 
         if password is not None:
             instance.set_password(password)
+
+
         #Finally, after everthing has been updated, we must explicitly save the model.
         #In this case, '.set_password()' does not save the model.
         instance.save()
+
+        for (key,value) in profile_data.items():
+            # Makes changes to the Profile model.
+            setattr(instance.profile,key,value)
+
+        instance.profile.save()
+        
         return instance
 
 

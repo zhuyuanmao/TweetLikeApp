@@ -65,8 +65,20 @@ class UserRetrieveUpdateAPIView(RetrieveUpdateAPIView):
         return Response(serializer.data,status=status.HTTP_200_OK)
 
     def update(self, request, *args, **kwargs):
-
-        serializer_data = request.data.get('user',{})
+        user_data = request.data.get('user',{})
+        serializer_data = {
+            'username':user_data.get('username',request.user.username),
+            'email':user_data.get('email',request.user.email),
+            # ? Need a new functionality to change password?
+            'password':user_data.get('password',request.user.password),
+            'profile':{
+                'bio':user_data.get('bio',request.user.profile.bio),
+                'image': user_data.get('image',request.user.profile.image),
+                'firstName':user_data.get('firstName',request.user.profile.firstName),
+                'lastName':user_data.get('lastName',request.user.profile.lastName),
+                'github':user_data.get('github',request.user.profile.github)
+            }
+        }
         #Here is that serialize, validate,save pattern.
         serializer = self.serializer_class(
             request.user,data=serializer_data,partial = True
