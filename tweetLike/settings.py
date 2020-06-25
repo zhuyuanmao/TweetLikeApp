@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'tweetLike.apps.authentication',
     'tweetLike.apps.core',
+    'tweetLike.apps.profiles',
     
 ]
 
