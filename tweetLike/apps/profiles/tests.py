@@ -48,12 +48,12 @@ class ProfileAPITest(APITestCase):
         self.client = APIClient()
 
     def test_retrieve_profile(self):
-        testUrl = self.url+ self.author.username+'/'
+        testUrl = self.url+ self.author.username
         response = self.client.get(testUrl)
         self.assertEqual(response.status_code,200)
 
     def test_retrieve_does_not_exist_profile(self):
-        testUrl = self.url +'doestnotexistuser'+'/'
+        testUrl = self.url +'doestnotexistuser'
         response = self.client.get(testUrl)
         self.assertEqual(response.status_code,404)
     

@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.conf.urls import include
 from tweetLike.apps.authentication.views import (
     UserRetrieveUpdateAPIView,RegistrationAPIView,LoginAPIView
 )
@@ -25,10 +26,8 @@ from tweetLike.apps.profiles.views import(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('user/',UserRetrieveUpdateAPIView.as_view()),
-    path('users/',RegistrationAPIView.as_view()),
-    path('users/login/',LoginAPIView.as_view()),
-
-    path('profiles/<str:username>/',ProfileRetrieveAPIView.as_view()),
-    
+    path('', include(('tweetLike.apps.profiles.urls', 'profiles'), namespace='profiles')),
+    path('', include(('tweetLike.apps.posts.urls', 'posts'), namespace='posts')),
+    path('', include(('tweetLike.apps.authentication.urls', 'authentication'), namespace='authentication')),
+   
 ]
