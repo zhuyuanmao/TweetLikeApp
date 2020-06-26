@@ -8,7 +8,8 @@ def core_exception_handler(exc, context):
 
     response = exception_handler(exc,context)
     handlers = {
-        "ValidationError":__handle_generic_error
+        "ValidationError":__handle_generic_error,
+        "NotFound":__handle_not_found_error
     }
 
     # This is how we identify the type of the current exception. We will use this
@@ -33,4 +34,20 @@ def __handle_generic_error(exc,context,response):
         'errors':response.data
     }
 
+    return response
+
+def __handle_not_found_error(exc,context,response):
+    view = context.get('view',None)
+
+    if view and hasattr(view,'queryset') and view.queryset is not None:
+        errory_key = view.queryset.model._meta.verbose_name
+
+        response.data ={
+            'errors':{
+                errory_key:response.data['detail']
+            }
+        }
+    else:
+        response = __handle_generic_error(exc,context,response)
+    
     return response

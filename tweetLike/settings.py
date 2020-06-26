@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'tweetLike.apps.authentication',
     'tweetLike.apps.core',
     'tweetLike.apps.profiles',
+    'tweetLike.apps.posts',
     
 ]
 

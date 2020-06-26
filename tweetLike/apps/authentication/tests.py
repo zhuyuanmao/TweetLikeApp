@@ -130,9 +130,8 @@ class UserRetrieveUpdateAPITest(APITestCase):
                 {'username':'new_username',
             }
         }
-        response = self.client.put('/user/',data=payload,format='json')
+        response = self.client.patch('/user/',data=payload,format='json')
         self.user.refresh_from_db()
-        
         self.assertEqual(response.status_code,200)
         self.assertEqual(self.user.username,payload['user'].get('username'))
 
