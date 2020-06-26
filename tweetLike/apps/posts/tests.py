@@ -84,6 +84,18 @@ class PostAPITest(APITestCase):
         response = self.client.get(self.url+'/'+'does-not-exist')
         self.assertEqual(response.status_code,404)
 
+    def test_update_single_post(self):
+        mask_data = {
+            "post":{
+                "title":"How to train your dragon 2",
+                "description":"Ever wonder how?",
+                "content":"You have to believe",
+            }
+        }
+        self.client.force_authenticate(user=self.author)
+        response = self.client.put(self.url+'/'+self.post.slug, data=mask_data,format='json')
+        self.assertEqual(response.status_code,200)
+
 
 
         
