@@ -1,7 +1,7 @@
 from django.test import TestCase
 
 # Create your tests here.
-from .models import Post
+from .models import Post,Comment
 from tweetLike.apps.authentication.models import Author
 
 from rest_framework.test import (
@@ -95,6 +95,59 @@ class PostAPITest(APITestCase):
         self.client.force_authenticate(user=self.author)
         response = self.client.put(self.url+'/'+self.post.slug, data=mask_data,format='json')
         self.assertEqual(response.status_code,200)
+
+class CommentAPITest(APITestCase):
+    url = '/posts'
+    post_data = {
+        "post":{
+            "title":"How to train your dragon",
+            "description":"Ever wonder how?",
+            "content":"You have to believe",
+        }
+    }
+    profile_data = {
+        "user": {
+            "bio":"Hello World",
+            "firstName":"John",
+            "lastName": "Doe",
+            "github":"https://github.com/test/"
+        }
+    }
+    def create_author(self,email='test@user.com',username='test',password='secret'):
+        return Author.objects.create_user(email,username,password)
+    
+    def setUp(self):
+        self.author = self.create_author()
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.author)
+        self.client.put('/user/',data=self.profile_data,format='json')
+        self.post = Post.objects.create(
+            title="How to train your dragon",
+            description="Ever wonder how?",
+            content="You have to believe",
+            author = self.author.profile,
+        )
+        self.comment = Comment.objects.create(
+            body = 'It takes a Jacobian',
+            post = self.post,
+            author = self.author.profile
+        )
+    def test_get_comments(self):
+        self.client.force_authenticate(user=self.author)
+        response = self.client.get(self.url+'/'+self.post.slug+'/comments/')
+        self.assertEqual(response.status_code,200)
+
+    def test_get_single_comment(self):
+        self.client.force_authenticate(user=self.author)
+        response = self.client.get(self.url+'/'+self.post.slug+'/comments/'+str(self.comment.id)+'/')
+        self.assertEqual(response.status_code,200)
+
+    def test_delete_single_comment(self):
+        self.client.force_authenticate(user=self.author)
+        response = self.client.delete(self.url+'/'+self.post.slug+'/comments/'+str(self.comment.id)+'/')
+        self.assertEqual(response.status_code,204)
+
+
 
 
 
