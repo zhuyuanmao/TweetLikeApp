@@ -9,6 +9,8 @@ class ProfileSerializer(serializers.ModelSerializer):
     lastName = serializers.CharField(allow_blank=True,required=False)
     image = serializers.SerializerMethodField('get_image')
     github = serializers.CharField(allow_blank=True,required=False)
+    
+    following = serializers.SerializerMethodField('get_following')
 
     class Meta:
         model = Profile
@@ -18,3 +20,18 @@ class ProfileSerializer(serializers.ModelSerializer):
         if object.image:
             return object.image
         return 'https://static.productionready.io/images/smiley-cyrus.jpg'
+    
+    def get_following(self,instance):
+        request = self.context.get('request',None)
+
+        if request is None:
+            return False
+
+        if not request.user.is_authenticated:
+            return False
+
+        follower = request.user.profile
+        followee = instance
+        
+        return follower.is_following(followee)
+
