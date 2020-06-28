@@ -66,3 +66,45 @@ class ProfileAPITest(APITestCase):
         self.assertEqual(self.author.profile.lastName,self.profile_data['user'].get('lastName'))
         self.assertEqual(self.author.profile.github,self.profile_data['user'].get('github'))
         self.assertEqual(self.author.profile.get_display_name(),"John Doe")
+
+class ProfileFollowAPITest(APITestCase):
+    url = '/profiles/'
+    profile_data = {
+        "user": {
+            "bio":"Hello World",
+            "firstName":"John",
+            "lastName": "Doe",
+            "github":"https://github.com/test/"
+        }
+    }
+    def create_author(self,email='test@user.com',username='testUser',password='secret'):
+        return Author.objects.create_user(email,username,password)
+
+    def setUp(self):
+        self.author = self.create_author()
+        self.follow1 = self.create_author(email='test1@user.com',username='testUser1',password='secret')
+        self.follow2 = self.create_author(email='test2@user.com',username='testUser2',password='secret')
+        self.client = APIClient()
+        self.author.profile.follow(self.follow1.profile)
+       
+    def test_following_myself(self):
+        self.client.force_authenticate(user=self.author)
+        url = '/profiles/'+self.author.username+'/follow'
+        respone = self.client.post(url)
+        self.assertEqual(respone.status_code,400)
+    def test_unfollow_author(self):
+        self.client.force_authenticate(user=self.author)
+        url = '/profiles/'+self.follow1.username+'/follow'
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code,204)
+    def test_follow_author(self):
+        self.client.force_authenticate(user=self.author)
+        url = '/profiles/'+self.follow1.username+'/follow'
+        response = self.client.post(url)
+        self.assertEqual(response.status_code,201)
+
+        
+        
+        
+
+        
