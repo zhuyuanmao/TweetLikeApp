@@ -29,6 +29,11 @@ class Profile(models.Model):
         symmetrical=False
     )
 
+    favorites = models.ManyToManyField(
+        'posts.Post',
+        related_name='favorited_by'
+    )
+
     def ___str___(self):
         return self.author.username
 
@@ -68,4 +73,13 @@ class Profile(models.Model):
         False otherwise.
         """
         return self.followed_by.filter(pk=profile.pk).exists()
+
+    def favorite(self,post):
+        self.favorites.add(post)
+
+    def unfavorite(self,post):
+        self.favorites.remove(post)
+    
+    def has_favorited(self,post):
+        return self.favorites.filter(pk=post.pk).exists()
     

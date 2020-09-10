@@ -1,8 +1,8 @@
-from django.shortcuts import render
 from rest_framework import mixins,status,viewsets,generics
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticatedOrReadOnly,IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import Post,Comment
 from .renderers import PostJSONRenderer,CommentJSONRenderer
@@ -35,7 +35,7 @@ class PostViewSet(mixins.CreateModelMixin,
         try:
             serializer_instance = self.queryset.get(slug=slug)
         except Post.DoesNotExist:
-            raise NotFound('An artile with this slug does not exist.')
+            raise NotFound('An article with this slug does not exist.')
 
         serializer = self.serializer_class(serializer_instance)
 
@@ -119,5 +119,35 @@ class CommentDestroyAPIView(generics.RetrieveDestroyAPIView):
         comment.delete()
         return Response({},status=status.HTTP_204_NO_CONTENT)
 
-        
+
+class PostFavoriteAPIView(APIView):
+    permission_classes = [IsAuthenticated,]
+    renderer_classes = [PostJSONRenderer,]
+    serializer_class = PostSerializer
+
+    def delete(self,request,post_slug=None):
+        profile = self.request.user.profile
+        serializer_context = {'request':request}
+
+        try:
+            post = Post.objects.get(slug=post_slug)
+        except Post.DoesNotExist:
+            raise NotFound("An article with this slug was not found")
+
+        profile.unfavorite(post)
+        serializer = self.serializer_class(post,context=serializer_context)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+
+    def post(self, request, post_slug=None):
+        profile = self.request.user.profile
+        serializer_context = {'request':request}
+
+        try:
+            post = Post.objects.get(slug=post_slug)
+        except Post.DoesNotExist:
+            raise NotFound("An article with this slug was not found")
+        profile.favorite(post)
+        serializer = self.serializer_class(post,context=serializer_context)
+
+        return Response(serializer.data,status=status.HTTP_201_CREATED)
 

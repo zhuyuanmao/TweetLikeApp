@@ -33,7 +33,7 @@ class LoginAPIView(APIView):
     But authenticated user will recieve a 200 status code.
     """
 
-    permisson_classes = [AllowAny,]
+    permission_classes = [AllowAny,]
     renderer_classess = [UserJSONRenderer,]
     serializer_class = LoginSerializer
 
