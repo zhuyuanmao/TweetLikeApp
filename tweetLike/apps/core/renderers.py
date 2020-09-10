@@ -6,6 +6,8 @@ class TweetLikeJsonRender(JSONRenderer):
     charset = 'utf-8'
     object_label = 'object'
     object_label_plural = 'objects'
+    pagination_object_label ='objects'
+    pagination_count_label = 'count'
 
     def render(self,data,media_type=None,render_context= None):
         if isinstance(data,ReturnList):

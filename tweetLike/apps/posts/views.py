@@ -31,6 +31,17 @@ class PostViewSet(mixins.CreateModelMixin,
         
         return Response(serializer.data,status=status.HTTP_201_CREATED)
 
+    def list(self,request):
+        serializer_context = {'request':request} 
+        page = self.paginate_queryset(self.queryset)
+
+        serializer = self.serializer_class(
+            page,
+            context =serializer_context,
+            many = True
+        )
+        return self.get_paginated_response(serializer.data)
+
     def retrieve(self, request,slug=None):
         try:
             serializer_instance = self.queryset.get(slug=slug)
