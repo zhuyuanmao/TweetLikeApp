@@ -18,6 +18,26 @@ class PostViewSet(mixins.CreateModelMixin,
     renderer_classes = [PostJSONRenderer,]
     serializer_class = PostSerializer
 
+    def get_queryset(self):
+        queryset = self.queryset
+
+        author = self.request.query_params.get('author',None)
+        if author is not None:
+            queryset = queryset.filter(author__author__username=author)
+
+        tag = self.request.query_params.get('tag',None)
+        if tag is not None:
+            queryset = queryset.filter(tags__tag=tag)
+
+        favorited_by = self.request.query_params.get('favorited',None)
+        if favorited_by is not None:
+            queryset = queryset.filter(
+                favorited_by__author__username=favorited_by
+            )
+
+        return queryset
+
+
     def create(self,request):
         serializer_context = {'author':request.user.profile} 
         serializer_data = request.data.get('post',{})
@@ -33,7 +53,7 @@ class PostViewSet(mixins.CreateModelMixin,
 
     def list(self,request):
         serializer_context = {'request':request} 
-        page = self.paginate_queryset(self.queryset)
+        page = self.paginate_queryset(self.get_queryset())
 
         serializer = self.serializer_class(
             page,
@@ -178,3 +198,24 @@ class TagListAPIView(generics.ListAPIView):
                 "tags":serializer.data
             },status = status.HTTP_200_OK
         )
+
+class PostFeedAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated,]
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    renderer_classes = [PostJSONRenderer,]
+
+    def get_queryset(self):
+        return Post.objects.filter(
+            author__in=self.request.user.profile.follows.all()
+        )
+    def list(self,request):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+
+        serializer_context = {'request':request}
+        serializer = self.serializer_class(
+            page,context=serializer_context,many=True
+        )
+
+        return self.get_paginated_response(serializer.data)
