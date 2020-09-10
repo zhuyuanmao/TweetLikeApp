@@ -2,7 +2,8 @@ from rest_framework import serializers
 
 from tweetLike.apps.profiles.serializers import ProfileSerializer
 
-from .models import Post,Comment
+from .models import Post,Comment,Tag
+from .relations import TagRelatedField
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -17,6 +18,7 @@ class PostSerializer(serializers.ModelSerializer):
         method_name="get_favorites_count"
     )
 
+    tagList = TagRelatedField(many=True,required=False,source='tags')
 
     created_at  = serializers.SerializerMethodField(method_name='get_created_at')
     updated_at = serializers.SerializerMethodField(method_name='get_updated_at')
@@ -31,13 +33,23 @@ class PostSerializer(serializers.ModelSerializer):
             'slug',
             'title',
             'contentType',
+            'favorited',
+            'favoritesCount',
+            'tagList',
             'created_at',
             'updated_at',
         )
     def create(self,validated_data):
         author = self.context.get('author',None)
 
-        return Post.objects.create(author=author,**validated_data)
+        tags = validated_data.pop('tags',[])
+
+        post =  Post.objects.create(author=author,**validated_data)
+
+        for tag in tags:
+            post.tags.add(post)
+
+        return post
 
     def get_favorited(self,instance):
         request = self.context.get('request',None)
@@ -85,3 +97,11 @@ class CommentSerializer(serializers.ModelSerializer):
 
     def get_updated_at(self, instance):
         return instance.updated_at.isoformat()
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ('tag',)
+
+    def to_representation(self, instance):
+        return instance.tag

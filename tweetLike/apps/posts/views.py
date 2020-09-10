@@ -1,12 +1,12 @@
 from rest_framework import mixins,status,viewsets,generics
 from rest_framework.exceptions import NotFound
-from rest_framework.permissions import IsAuthenticatedOrReadOnly,IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly,IsAuthenticated,AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Post,Comment
+from .models import Post,Comment,Tag
 from .renderers import PostJSONRenderer,CommentJSONRenderer
-from .serializers import PostSerializer,CommentSerializer
+from .serializers import PostSerializer,CommentSerializer,TagSerializer
 
 class PostViewSet(mixins.CreateModelMixin,
                  mixins.ListModelMixin,
@@ -151,3 +151,19 @@ class PostFavoriteAPIView(APIView):
 
         return Response(serializer.data,status=status.HTTP_201_CREATED)
 
+
+class TagListAPIView(generics.ListAPIView):
+    queryset = Tag.objects.all()
+    pagination_class = None
+    permission_classes = [AllowAny,]
+    serializer_class = TagSerializer
+
+    def list(self,request):
+        serializer_data = self.get_queryset()
+        serializer = self.serializer_class(serializer_data,many=True)
+
+        return Response(
+            {
+                "tags":serializer.data
+            },status = status.HTTP_200_OK
+        )
