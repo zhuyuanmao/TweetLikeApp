@@ -1,12 +1,12 @@
-from django.shortcuts import render
 from rest_framework import mixins,status,viewsets,generics
 from rest_framework.exceptions import NotFound
-from rest_framework.permissions import IsAuthenticatedOrReadOnly,IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly,IsAuthenticated,AllowAny
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from .models import Post,Comment
+from .models import Post,Comment,Tag
 from .renderers import PostJSONRenderer,CommentJSONRenderer
-from .serializers import PostSerializer,CommentSerializer
+from .serializers import PostSerializer,CommentSerializer,TagSerializer
 
 class PostViewSet(mixins.CreateModelMixin,
                  mixins.ListModelMixin,
@@ -17,6 +17,26 @@ class PostViewSet(mixins.CreateModelMixin,
     permission_classes = [IsAuthenticatedOrReadOnly,]
     renderer_classes = [PostJSONRenderer,]
     serializer_class = PostSerializer
+
+    def get_queryset(self):
+        queryset = self.queryset
+
+        author = self.request.query_params.get('author',None)
+        if author is not None:
+            queryset = queryset.filter(author__author__username=author)
+
+        tag = self.request.query_params.get('tag',None)
+        if tag is not None:
+            queryset = queryset.filter(tags__tag=tag)
+
+        favorited_by = self.request.query_params.get('favorited',None)
+        if favorited_by is not None:
+            queryset = queryset.filter(
+                favorited_by__author__username=favorited_by
+            )
+
+        return queryset
+
 
     def create(self,request):
         serializer_context = {'author':request.user.profile} 
@@ -31,11 +51,22 @@ class PostViewSet(mixins.CreateModelMixin,
         
         return Response(serializer.data,status=status.HTTP_201_CREATED)
 
+    def list(self,request):
+        serializer_context = {'request':request} 
+        page = self.paginate_queryset(self.get_queryset())
+
+        serializer = self.serializer_class(
+            page,
+            context =serializer_context,
+            many = True
+        )
+        return self.get_paginated_response(serializer.data)
+
     def retrieve(self, request,slug=None):
         try:
             serializer_instance = self.queryset.get(slug=slug)
         except Post.DoesNotExist:
-            raise NotFound('An artile with this slug does not exist.')
+            raise NotFound('An article with this slug does not exist.')
 
         serializer = self.serializer_class(serializer_instance)
 
@@ -119,5 +150,72 @@ class CommentDestroyAPIView(generics.RetrieveDestroyAPIView):
         comment.delete()
         return Response({},status=status.HTTP_204_NO_CONTENT)
 
-        
 
+class PostFavoriteAPIView(APIView):
+    permission_classes = [IsAuthenticated,]
+    renderer_classes = [PostJSONRenderer,]
+    serializer_class = PostSerializer
+
+    def delete(self,request,post_slug=None):
+        profile = self.request.user.profile
+        serializer_context = {'request':request}
+
+        try:
+            post = Post.objects.get(slug=post_slug)
+        except Post.DoesNotExist:
+            raise NotFound("An article with this slug was not found")
+
+        profile.unfavorite(post)
+        serializer = self.serializer_class(post,context=serializer_context)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+
+    def post(self, request, post_slug=None):
+        profile = self.request.user.profile
+        serializer_context = {'request':request}
+
+        try:
+            post = Post.objects.get(slug=post_slug)
+        except Post.DoesNotExist:
+            raise NotFound("An article with this slug was not found")
+        profile.favorite(post)
+        serializer = self.serializer_class(post,context=serializer_context)
+
+        return Response(serializer.data,status=status.HTTP_201_CREATED)
+
+
+class TagListAPIView(generics.ListAPIView):
+    queryset = Tag.objects.all()
+    pagination_class = None
+    permission_classes = [AllowAny,]
+    serializer_class = TagSerializer
+
+    def list(self,request):
+        serializer_data = self.get_queryset()
+        serializer = self.serializer_class(serializer_data,many=True)
+
+        return Response(
+            {
+                "tags":serializer.data
+            },status = status.HTTP_200_OK
+        )
+
+class PostFeedAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated,]
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    renderer_classes = [PostJSONRenderer,]
+
+    def get_queryset(self):
+        return Post.objects.filter(
+            author__in=self.request.user.profile.follows.all()
+        )
+    def list(self,request):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+
+        serializer_context = {'request':request}
+        serializer = self.serializer_class(
+            page,context=serializer_context,many=True
+        )
+
+        return self.get_paginated_response(serializer.data)

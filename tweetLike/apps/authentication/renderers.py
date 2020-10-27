@@ -3,6 +3,9 @@ from rest_framework.renderers import JSONRenderer
 
 class UserJSONRenderer(JSONRenderer):
     charset = 'utf-8'
+    object_label = 'user'
+    pagination_object_label ='users'
+    pagination_count_label = 'usersCount'
 
     def render(self,data,media_type=None, render_context = None):
         # If the view throws an error (such as the user can't be authenticated
@@ -20,6 +23,7 @@ class UserJSONRenderer(JSONRenderer):
         if errors is not None:
             # we will let the default JSONRender handle rendering errors
             return super(UserJSONRenderer,self).render(data)
+            
         if token is not None and isinstance(token,bytes):
             # we will decode 'token' if it is of type bytes.
             data['token'] = token.decode('utf-8')

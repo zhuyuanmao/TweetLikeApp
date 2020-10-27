@@ -39,6 +39,10 @@ class Post(TimestampedModel):
         'profiles.Profile',on_delete=models.CASCADE,related_name='posts'
     )
 
+    tags = models.ManyToManyField(
+        'posts.Tag',related_name='posts'
+    )
+
     #visibility = models.CharField(max_length=48,default='PUBLIC',choices = VISIBILITY)
     #unlisted = models.BooleanField(default=False,choices=UNLISTED)
     def __str__(self):
@@ -53,7 +57,8 @@ class Comment(TimestampedModel):
         'profiles.Profile',related_name='comments',on_delete=models.CASCADE
     )
 
-
-
-
-
+class Tag(TimestampedModel):
+    tag = models.CharField(max_length=255)
+    slug = models.SlugField(db_index=True,unique=True)
+    def __str__(self):
+        return self.tag
