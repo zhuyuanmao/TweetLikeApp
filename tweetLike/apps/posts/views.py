@@ -20,8 +20,8 @@ class PostViewSet(mixins.CreateModelMixin,
 
     def get_queryset(self):
         queryset = self.queryset
-
         author = self.request.query_params.get('author',None)
+    
         if author is not None:
             queryset = queryset.filter(author__author__username=author)
 
@@ -33,7 +33,7 @@ class PostViewSet(mixins.CreateModelMixin,
         if favorited_by is not None:
             queryset = queryset.filter(
                 favorited_by__author__username=favorited_by
-            )
+        )
 
         return queryset
 
@@ -51,16 +51,17 @@ class PostViewSet(mixins.CreateModelMixin,
         
         return Response(serializer.data,status=status.HTTP_201_CREATED)
 
-    def list(self,request):
-        serializer_context = {'request':request} 
-        page = self.paginate_queryset(self.get_queryset())
 
-        serializer = self.serializer_class(
-            page,
-            context =serializer_context,
-            many = True
-        )
-        return self.get_paginated_response(serializer.data)
+    def list(self,request):
+        serializer_context = {'request': request}
+        instances = self.get_queryset()
+        page = self.paginate_queryset(instances)
+      
+        if page is not None:
+            serializer = self.get_pagination_serializer(page)
+        else:
+            serializer = self.get_serializer(instances, many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
 
     def retrieve(self, request,slug=None):
         try:

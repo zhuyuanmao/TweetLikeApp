@@ -55,7 +55,7 @@ class PostSerializer(serializers.ModelSerializer):
         request = self.context.get('request',None)
         if request is None:
             return False
-        if not request.user.is_authenticated():
+        if not request.user.is_authenticated:
             return False
 
         return request.user.profiles.has_favorited(instance)

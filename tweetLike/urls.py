@@ -26,8 +26,8 @@ from tweetLike.apps.profiles.views import(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include(('tweetLike.apps.profiles.urls', 'profiles'), namespace='profiles')),
-    path('', include(('tweetLike.apps.posts.urls', 'posts'), namespace='posts')),
-    path('', include(('tweetLike.apps.authentication.urls', 'authentication'), namespace='authentication')),
+    path('api/', include(('tweetLike.apps.profiles.urls', 'profiles'), namespace='profiles')),
+    path('api/', include(('tweetLike.apps.posts.urls', 'posts'), namespace='posts')),
+    path('api/', include(('tweetLike.apps.authentication.urls', 'authentication'), namespace='authentication')),
    
 ]
